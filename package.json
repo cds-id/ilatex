@@ -1,0 +1,44 @@
+{
+  "name": "ilatex-editor",
+  "version": "0.1.0",
+  "description": "CKEditor 5 Equation editor by CDS for LaTeX formulas.",
+  "author": "CDS",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cds-id/ilatex.git"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "demo": "vite --host 0.0.0.0 sample",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json && vite build sample --outDir ../dist-demo"
+  },
+  "dependencies": {
+    "@ckeditor/ckeditor5-core": "48.2.0",
+    "@ckeditor/ckeditor5-engine": "48.2.0",
+    "@ckeditor/ckeditor5-ui": "48.2.0",
+    "@ckeditor/ckeditor5-utils": "48.2.0",
+    "@ckeditor/ckeditor5-widget": "48.2.0",
+    "ckeditor5": "48.2.0",
+    "mathlive": "^0.110.0"
+  },
+  "devDependencies": {
+    "@ckeditor/ckeditor5-basic-styles": "48.2.0",
+    "@ckeditor/ckeditor5-editor-classic": "48.2.0",
+    "@ckeditor/ckeditor5-essentials": "48.2.0",
+    "@ckeditor/ckeditor5-paragraph": "48.2.0",
+    "@types/node": "^24.0.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.3"
+  }
+}
