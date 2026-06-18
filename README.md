@@ -1,13 +1,23 @@
 # ilatex-editor
 
+<p align="center">
+  <a href="https://www.ciptadusa.com">
+    <img src="https://www.ciptadusa.com/logo-only.png" alt="Cipta Dua Saudara logo" height="80" >
+  </a>
+</p>
+
+
 CKEditor 5 Equation editor by CDS for inline LaTeX formulas.
+
+Part of **Open CDS** — open-source programs by [Cipta Dua Saudara](https://www.ciptadusa.com).
 
 ## Features
 
 - TypeScript CKEditor 5 plugin.
 - Inline object widget: `latexInline`.
 - Official package name: `ilatex-editor`.
-- Creator: `CDS`.
+- Creator: `CDS` / [Cipta Dua Saudara](https://www.ciptadusa.com).
+- Program: **Open CDS** open-source programs.
 - Repository: `git@github.com:cds-id/ilatex.git`.
 - Plugin class: `Equation`.
 - Toolbar/menu item: `formula`, labeled **Formula**.

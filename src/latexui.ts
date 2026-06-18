@@ -1,5 +1,5 @@
 import 'mathlive';
-import { ButtonView, Plugin } from 'ckeditor5';
+import { ButtonView, Plugin, type ModelElement } from 'ckeditor5';
 
 export default class LatexUI extends Plugin {
 	public static get pluginName() {
@@ -18,10 +18,15 @@ export default class LatexUI extends Plugin {
 				}
 
 				event.preventDefault();
-				selectEquationElement( editor, equationElement );
+				const modelElement = selectEquationElement( editor, equationElement );
 				openLatexEditorDialog( {
 					initialValue: equationElement.dataset.latex ?? '',
 					onSubmit: latex => {
+						if ( modelElement && modelElement.root.rootName !== '$graveyard' ) {
+							editor.model.change( writer => {
+								writer.setSelection( modelElement, 'on' );
+							} );
+						}
 						editor.execute( 'insertLatex', { latex } );
 						editor.editing.view.focus();
 					}
@@ -65,6 +70,8 @@ type MathFieldElementLike = HTMLElement & {
 	value?: string;
 	mathVirtualKeyboardPolicy?: string;
 	executeCommand?: ( command: string | unknown[] ) => boolean;
+	getValue?: ( format?: string ) => string;
+	setValue?: ( value: string ) => void;
 };
 
 function openLatexEditorDialog( { initialValue, onSubmit }: LatexDialogOptions ): void {
@@ -100,7 +107,7 @@ function openLatexEditorDialog( { initialValue, onSubmit }: LatexDialogOptions )
 	mathfield.setAttribute( 'virtual-keyboard-mode', 'manual' );
 	mathfield.setAttribute( 'smart-fence', '' );
 	mathfield.mathVirtualKeyboardPolicy = 'manual';
-	mathfield.value = initialValue;
+	setMathFieldValue( mathfield, initialValue );
 	textarea.value = initialValue;
 	host.appendChild( mathfield );
 
@@ -112,7 +119,7 @@ function openLatexEditorDialog( { initialValue, onSubmit }: LatexDialogOptions )
 		}
 
 		syncing = true;
-		textarea.value = mathfield.value ?? '';
+		textarea.value = getMathFieldValue( mathfield );
 		syncing = false;
 	} );
 
@@ -122,14 +129,14 @@ function openLatexEditorDialog( { initialValue, onSubmit }: LatexDialogOptions )
 		}
 
 		syncing = true;
-		mathfield.value = textarea.value;
+		setMathFieldValue( mathfield, textarea.value );
 		syncing = false;
 	} );
 
 	backdrop.querySelector( '.ck-latex-close' )?.addEventListener( 'click', () => backdrop.remove() );
 	backdrop.querySelector( '[data-testid="latex-cancel"]' )?.addEventListener( 'click', () => backdrop.remove() );
 	backdrop.querySelector( '[data-testid="latex-insert"]' )?.addEventListener( 'click', () => {
-		const latex = ( mathfield.value ?? textarea.value ).trim();
+		const latex = getMathFieldValue( mathfield, textarea.value ).trim();
 
 		if ( latex ) {
 			onSubmit( latex );
@@ -142,15 +149,29 @@ function openLatexEditorDialog( { initialValue, onSubmit }: LatexDialogOptions )
 	setTimeout( () => mathfield.focus(), 0 );
 }
 
-function selectEquationElement( editor: LatexUI[ 'editor' ], equationElement: HTMLElement ): void {
+function getMathFieldValue( mathfield: MathFieldElementLike, fallback = '' ): string {
+	return mathfield.getValue?.( 'latex' ) ?? mathfield.value ?? fallback;
+}
+
+function setMathFieldValue( mathfield: MathFieldElementLike, value: string ): void {
+	if ( mathfield.setValue ) {
+		mathfield.setValue( value );
+	} else {
+		mathfield.value = value;
+	}
+}
+
+function selectEquationElement( editor: LatexUI[ 'editor' ], equationElement: HTMLElement ): ModelElement | null {
 	const viewElement = editor.editing.view.domConverter.domToView( equationElement );
-	const modelElement = viewElement?.is( 'element' ) ? editor.editing.mapper.toModelElement( viewElement ) : null;
+	const modelElement = viewElement?.is( 'element' ) ? editor.editing.mapper.toModelElement( viewElement ) ?? null : null;
 
 	if ( modelElement ) {
 		editor.model.change( writer => {
 			writer.setSelection( modelElement, 'on' );
 		} );
 	}
+
+	return modelElement;
 }
 
 function addSymbolButtons( container: HTMLElement, mathfield: MathFieldElementLike, textarea: HTMLTextAreaElement ): void {
@@ -178,7 +199,7 @@ function addSymbolButtons( container: HTMLElement, mathfield: MathFieldElementLi
 				mathfield.value = `${ mathfield.value ?? '' }${ symbol.latex }`;
 			}
 
-			textarea.value = mathfield.value ?? '';
+			textarea.value = getMathFieldValue( mathfield );
 			mathfield.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 			mathfield.focus();
 		} );
