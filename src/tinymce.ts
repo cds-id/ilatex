@@ -98,7 +98,24 @@ function injectMathliveCss( editor: TinyMceEditorLike ): void {
 
 	const style = doc.createElement( 'style' );
 	style.id = 'mathlive-static-css';
-	style.textContent = css;
+	style.textContent = css + `
+.${ LATEX_MATH_CLASS } {
+	display: inline-block;
+	vertical-align: middle;
+	cursor: pointer;
+	user-select: all;
+}
+.${ LATEX_MATH_CLASS }[data-mce-selected] {
+	outline: 2px solid #2563eb;
+	outline-offset: 1px;
+	border-radius: 2px;
+}
+.mce-offscreen-selection {
+	position: absolute !important;
+	left: -9999999px !important;
+	max-width: 1000000px;
+}
+`;
 	doc.head.appendChild( style );
 }
 
