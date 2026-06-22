@@ -24,16 +24,112 @@ type MathFieldElementLike = HTMLElement & {
 };
 
 const DEFAULT_DIALOG_CLASS = 'ck-latex-editor-dialog';
+const STYLE_ELEMENT_ID = 'ilatex-dialog-styles';
+
+// Self-contained dialog styles, injected once at runtime so consumers need no
+// separate CSS import. Scoped under .ilatex-dialog (added to every backdrop)
+// so it applies regardless of the configurable root class.
+const DIALOG_CSS = `
+.ilatex-dialog {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: grid;
+	place-items: center;
+	background: rgb(15 23 42 / 0.45);
+}
+.ilatex-dialog .ck-latex-editor-panel {
+	box-sizing: border-box;
+	width: min(720px, calc(100vw - 2rem));
+	padding: 1rem;
+	border-radius: 0.75rem;
+	background: #fff;
+	color: #0f172a;
+	box-shadow: 0 24px 80px rgb(15 23 42 / 0.35);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+.ilatex-dialog .ck-latex-editor-header,
+.ilatex-dialog .ck-latex-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+.ilatex-dialog .ck-latex-mathfield-host math-field {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 4rem;
+	margin: 1rem 0;
+	padding: 0.75rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-size: 1.4rem;
+}
+.ilatex-dialog .ck-latex-symbols {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin-bottom: 1rem;
+}
+.ilatex-dialog .ck-latex-symbols button,
+.ilatex-dialog .ck-latex-actions button,
+.ilatex-dialog .ck-latex-close {
+	padding: 0.4rem 0.7rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.4rem;
+	background: #f8fafc;
+	color: #0f172a;
+	cursor: pointer;
+}
+.ilatex-dialog .ck-latex-close {
+	border: 0;
+	background: transparent;
+	font-size: 1.25rem;
+	line-height: 1;
+}
+.ilatex-dialog [data-testid="latex-insert"] {
+	background: #2563eb;
+	border-color: #2563eb;
+	color: #fff;
+}
+.ilatex-dialog .ck-latex-source-label {
+	display: block;
+	margin-bottom: 0.35rem;
+	font-weight: 600;
+}
+.ilatex-dialog .ck-latex-source {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 5rem;
+	margin-bottom: 1rem;
+	padding: 0.75rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+`;
+
+function injectDialogStyles(): void {
+	if ( typeof document === 'undefined' || document.getElementById( STYLE_ELEMENT_ID ) ) {
+		return;
+	}
+
+	const style = document.createElement( 'style' );
+	style.id = STYLE_ELEMENT_ID;
+	style.textContent = DIALOG_CSS;
+	document.head.appendChild( style );
+}
 
 /**
  * Open the MathLive equation editor dialog. Calls `onSubmit` with the trimmed
  * LaTeX when the user inserts a non-empty formula.
  */
 export function openLatexEditorDialog( { initialValue, onSubmit, dialogClass = DEFAULT_DIALOG_CLASS }: LatexDialogOptions ): void {
+	injectDialogStyles();
 	document.querySelector( `.${ dialogClass }` )?.remove();
 
 	const backdrop = document.createElement( 'div' );
-	backdrop.className = dialogClass;
+	backdrop.className = `ilatex-dialog ${ dialogClass }`;
 	backdrop.setAttribute( 'role', 'dialog' );
 	backdrop.setAttribute( 'aria-modal', 'true' );
 	backdrop.innerHTML = `

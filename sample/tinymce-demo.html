@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>TinyMCE LaTeX Plugin Demo</title>
+		<script type="module" src="/tinymce-demo.ts"></script>
+	</head>
+	<body>
+		<main>
+			<h1>TinyMCE LaTeX Plugin Demo</h1>
+			<p>TinyMCE 7.4.1 + MathLive. Click <strong>Formula</strong> or double-click an equation.</p>
+			<textarea id="editor">
+				<p>Inline formula: <span class="latex-math" data-latex="E=mc^2">E=mc^2</span> in text.</p>
+				<p>Another: <span class="latex-math" data-latex="\frac{a}{b}">\frac{a}{b}</span></p>
+				<p>Shortcode auto: [%3x+4y-32=0%] end.</p>
+			</textarea>
+			<h2>Serialized output (getContent)</h2>
+			<pre id="output"></pre>
+			<h2>Rendered downstream (renderLatexInElement)</h2>
+			<div id="downstream"></div>
+		</main>
+	</body>
+</html>

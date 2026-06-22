@@ -11,10 +11,11 @@ import {
 type ButtonSpec = Parameters<TinyMceEditorLike[ 'ui' ][ 'registry' ][ 'addButton' ]>[ 1 ];
 type DblHandler = ( event: { target?: Element } & Event ) => void;
 
-function createFakeEditor( selectedNode: Element ) {
+function createFakeEditor( selectedNode: Element, body?: HTMLElement ) {
 	const buttons = new Map<string, ButtonSpec>();
 	const handlers = new Map<string, DblHandler>();
 	const inserted: string[] = [];
+	const editorBody = body ?? document.createElement( 'div' );
 
 	const editor = {
 		ui: {
@@ -28,24 +29,20 @@ function createFakeEditor( selectedNode: Element ) {
 			handlers.set( name, handler );
 		},
 		selection: {
-			getNode: () => selectedNode,
-			getContent: () => ''
+			getNode: () => selectedNode
 		},
 		insertContent: ( content: string ) => {
 			inserted.push( content );
+			editorBody.insertAdjacentHTML( 'beforeend', content );
 		},
-		dom: {
-			setAttrib: ( element: Element, attr: string, value: string ) => {
-				element.setAttribute( attr, value );
-			},
-			setHTML: ( element: Element, html: string ) => {
-				element.innerHTML = html;
-			}
-		},
+		getBody: () => editorBody,
+		getDoc: () => document,
+		contentDocument: document,
+		dispatch: vi.fn(),
 		fire: vi.fn()
 	} satisfies TinyMceEditorLike;
 
-	return { editor, buttons, handlers, inserted };
+	return { editor, buttons, handlers, inserted, editorBody };
 }
 
 function getDialog(): HTMLElement {
@@ -62,10 +59,11 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 		expect( LATEX_EQUATION_TOOLBAR_BUTTON ).toBe( 'formula' );
 	} );
 
-	it( 'builds an escaped latex-math span', () => {
-		expect( buildLatexSpan( 'a<b&c' ) ).toBe(
-			'<span class="latex-math" data-latex="a&lt;b&amp;c">a&lt;b&amp;c</span>'
-		);
+	it( 'builds a rendered, round-trippable latex-math span', () => {
+		const html = buildLatexSpan( 'a<b&c' );
+		expect( html ).toContain( 'class="latex-math latex-rendered"' );
+		expect( html ).toContain( 'data-latex="a&lt;b&amp;c"' );
+		expect( html ).toContain( 'contenteditable="false"' );
 	} );
 
 	it( 'registers a Formula toolbar button', () => {
@@ -92,7 +90,9 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 		textarea.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 		( dialog.querySelector( '[data-testid="latex-insert"]' ) as HTMLButtonElement ).click();
 
-		expect( inserted ).toEqual( [ '<span class="latex-math" data-latex="E=mc^2">E=mc^2</span>' ] );
+		expect( inserted.length ).toBe( 1 );
+		expect( inserted[ 0 ] ).toContain( 'data-latex="E=mc^2"' );
+		expect( inserted[ 0 ] ).toContain( 'class="latex-math latex-rendered"' );
 		expect( getDialog() ).toBeFalsy();
 	} );
 
@@ -119,7 +119,8 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 		// Updated in place, no new insert.
 		expect( inserted ).toEqual( [] );
 		expect( equation.getAttribute( 'data-latex' ) ).toBe( 'a-b' );
-		expect( equation.innerHTML ).toBe( 'a-b' );
+		expect( equation.classList.contains( 'latex-rendered' ) ).toBe( true );
+		expect( equation.getAttribute( 'contenteditable' ) ).toBe( 'false' );
 	} );
 
 	it( 'opens edit dialog on double click of an equation', () => {
@@ -150,6 +151,38 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 
 		expect( event.defaultPrevented ).toBe( false );
 		expect( getDialog() ).toBeFalsy();
+	} );
+
+	it( 'converts [% %] shortcodes in the body on init', () => {
+		const body = document.createElement( 'div' );
+		body.innerHTML = '<p>before [%a+b%] after</p>';
+		const { editor, handlers } = createFakeEditor( body, body );
+
+		setupLatexEquation( editor );
+		handlers.get( 'init' )!( {} as never );
+
+		const span = body.querySelector( '.latex-math[data-latex]' );
+		expect( span ).toBeTruthy();
+		expect( span!.getAttribute( 'data-latex' ) ).toBe( 'a+b' );
+		expect( body.textContent ).not.toContain( '[%' );
+	} );
+
+	it( 'strips rendered markup on PreProcess so serialized HTML is clean', () => {
+		const { editor, handlers } = createFakeEditor( document.createElement( 'p' ) );
+		setupLatexEquation( editor );
+
+		const node = document.createElement( 'div' );
+		node.innerHTML = buildLatexSpan( 'E=mc^2' );
+		expect( node.innerHTML ).toContain( 'ML__' );
+
+		handlers.get( 'PreProcess' )!( { node } as never );
+
+		const span = node.querySelector( '.latex-math' )!;
+		expect( span.getAttribute( 'data-latex' ) ).toBe( 'E=mc^2' );
+		expect( span.classList.contains( 'latex-rendered' ) ).toBe( false );
+		expect( span.hasAttribute( 'contenteditable' ) ).toBe( false );
+		expect( span.innerHTML ).toBe( 'E=mc^2' );
+		expect( node.innerHTML ).not.toContain( 'ML__' );
 	} );
 
 	it( 'registers via PluginManager', () => {

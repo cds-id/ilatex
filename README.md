@@ -174,9 +174,14 @@ client for fonts.
 ## Usage in TinyMCE 5
 
 The TinyMCE plugin is CKEditor-free: `@cds.id/ilatex-editor/tinymce` only pulls
-MathLive + the shared dialog. It emits the same HTML as the CKEditor plugin
-(`<span class="latex-math" data-latex="...">`), so content authored here renders
-identically via `renderLatexInElement`.
+MathLive + the shared dialog. Works with TinyMCE 5, 6 and 7. It:
+
+- renders equations **inside the editor iframe** (injects MathLive CSS there);
+- auto-converts `[% ... %]` shortcodes as you type, paste, or load content;
+- serializes **clean** HTML — `<span class="latex-math" data-latex="...">latex</span>`
+  (rendered markup is stripped on save), the same format the CKEditor plugin
+  emits, so stored content renders identically via `renderLatexInElement`;
+- ships its own dialog styles (no extra CSS import for the editor UI).
 
 Simplest integration is the `setup` callback (works with cloud-loaded TinyMCE,
 no `PluginManager` registration needed):
@@ -184,6 +189,7 @@ no `PluginManager` registration needed):
 ```jsx
 import { Editor } from '@tinymce/tinymce-react';
 import { setupLatexEquation } from '@cds.id/ilatex-editor/tinymce';
+// MathLive fonts for the in-editor render + dialog math-field:
 import 'mathlive/mathlive-static.css';
 import 'mathlive/mathlive-fonts.css';
 
@@ -197,6 +203,8 @@ import 'mathlive/mathlive-fonts.css';
 ```
 
 Click **Formula** to insert/edit; double-click an existing equation to edit it.
+Stored HTML is rendered for display with `renderLatexInElement` (e.g. inside a
+React `LatexContent` component — see *Use in React* above).
 
 Self-hosted TinyMCE can register a named plugin instead:
 
