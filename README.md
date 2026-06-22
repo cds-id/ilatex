@@ -52,6 +52,7 @@ Package entry points:
 | `@cds.id/ilatex-editor` | CKEditor 5 `Equation` plugin + render utils |
 | `@cds.id/ilatex-editor/render` | SSR-safe render utilities (no CKEditor, no CSS) |
 | `@cds.id/ilatex-editor/auto` | Zero-config: renders the whole page on load |
+| `@cds.id/ilatex-editor/tinymce` | TinyMCE 5 equation plugin (no CKEditor) |
 | `@cds.id/ilatex-editor/styles` | MathLive static + font CSS (bundler only) |
 
 ## Usage in CKEditor 5
@@ -169,6 +170,56 @@ export function Article( { html }: { html: string } ) {
 `renderLatexToMarkup` is SSR-safe (pure string, no CSS import), so you can also
 render on the server and ship static markup; load `@cds.id/ilatex-editor/styles` on the
 client for fonts.
+
+## Usage in TinyMCE 5
+
+The TinyMCE plugin is CKEditor-free: `@cds.id/ilatex-editor/tinymce` only pulls
+MathLive + the shared dialog. It emits the same HTML as the CKEditor plugin
+(`<span class="latex-math" data-latex="...">`), so content authored here renders
+identically via `renderLatexInElement`.
+
+Simplest integration is the `setup` callback (works with cloud-loaded TinyMCE,
+no `PluginManager` registration needed):
+
+```jsx
+import { Editor } from '@tinymce/tinymce-react';
+import { setupLatexEquation } from '@cds.id/ilatex-editor/tinymce';
+import 'mathlive/mathlive-static.css';
+import 'mathlive/mathlive-fonts.css';
+
+<Editor
+  apiKey={ process.env.REACT_APP_TINYMCE_FREE }
+  init={ {
+    setup: setupLatexEquation,
+    toolbar: 'bold italic | formula'
+  } }
+/>;
+```
+
+Click **Formula** to insert/edit; double-click an existing equation to edit it.
+
+Self-hosted TinyMCE can register a named plugin instead:
+
+```ts
+import { registerLatexEquationPlugin } from '@cds.id/ilatex-editor/tinymce';
+
+registerLatexEquationPlugin( window.tinymce );
+// init={{ plugins: 'latexequation', toolbar: 'formula' }}
+```
+
+### Webpack 4 / CRA 4 (e.g. pnpm strict)
+
+Webpack 4 ignores package `exports` maps, so:
+
+- Import the **physical** built file. Most CRA4 setups resolve
+  `@cds.id/ilatex-editor/tinymce` to `dist/tinymce.js` via `main`-style lookup; if
+  not, import `@cds.id/ilatex-editor/dist/tinymce.js` directly.
+- Use MathLive's **physical** CSS filenames: `mathlive/mathlive-static.css` and
+  `mathlive/mathlive-fonts.css` (not the `exports` aliases `mathlive/static.css` /
+  `mathlive/fonts.css`).
+- Declare `mathlive` as a **direct** dependency so pnpm hoists it to
+  `node_modules/mathlive`; otherwise the bare CSS specifier is a phantom dep and
+  fails to resolve.
 
 ## Fonts
 
