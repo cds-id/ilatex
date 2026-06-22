@@ -1,6 +1,6 @@
 {
   "name": "@cds.id/ilatex-editor",
-  "version": "0.2.0",
+  "version": "0.2.0-ck43.0",
   "description": "CKEditor 5 Equation editor by CDS for LaTeX formulas.",
   "author": "CDS",
   "repository": {
@@ -42,19 +42,19 @@
     "access": "public"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-core": "48.2.0",
-    "@ckeditor/ckeditor5-engine": "48.2.0",
-    "@ckeditor/ckeditor5-ui": "48.2.0",
-    "@ckeditor/ckeditor5-utils": "48.2.0",
-    "@ckeditor/ckeditor5-widget": "48.2.0",
-    "ckeditor5": "48.2.0",
+    "@ckeditor/ckeditor5-core": "43.2.0",
+    "@ckeditor/ckeditor5-engine": "43.2.0",
+    "@ckeditor/ckeditor5-ui": "43.2.0",
+    "@ckeditor/ckeditor5-utils": "43.2.0",
+    "@ckeditor/ckeditor5-widget": "43.2.0",
+    "ckeditor5": "43.2.0",
     "mathlive": "^0.110.0"
   },
   "devDependencies": {
-    "@ckeditor/ckeditor5-basic-styles": "48.2.0",
-    "@ckeditor/ckeditor5-editor-classic": "48.2.0",
-    "@ckeditor/ckeditor5-essentials": "48.2.0",
-    "@ckeditor/ckeditor5-paragraph": "48.2.0",
+    "@ckeditor/ckeditor5-basic-styles": "43.2.0",
+    "@ckeditor/ckeditor5-editor-classic": "43.2.0",
+    "@ckeditor/ckeditor5-essentials": "43.2.0",
+    "@ckeditor/ckeditor5-paragraph": "43.2.0",
     "@types/node": "^24.0.0",
     "jsdom": "^29.1.1",
     "typescript": "^5.8.3",

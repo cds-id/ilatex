@@ -3,10 +3,10 @@ import {
 	Widget,
 	toWidget,
 	viewToModelPositionOutsideModelElement,
-	type ViewDowncastWriter,
-	type ModelElement,
-	type ModelText,
-	type ModelWriter,
+	type DowncastWriter as ViewDowncastWriter,
+	type Element as ModelElement,
+	type Text as ModelText,
+	type Writer as ModelWriter,
 	type ViewElement
 } from 'ckeditor5';
 import InsertLatexCommand from './insertlatexcommand.js';

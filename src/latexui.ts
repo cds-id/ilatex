@@ -1,5 +1,5 @@
 import 'mathlive';
-import { ButtonView, Plugin, type ModelElement } from 'ckeditor5';
+import { ButtonView, Plugin, type Element as ModelElement } from 'ckeditor5';
 
 export default class LatexUI extends Plugin {
 	public static get pluginName() {

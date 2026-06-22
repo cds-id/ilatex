@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ClassicEditor, Paragraph, type ButtonView, type ModelElement } from 'ckeditor5';
+import { ClassicEditor, Paragraph, type ButtonView, type Element as ModelElement } from 'ckeditor5';
 import { Equation } from '../src';
 
 const editors: ClassicEditor[] = [];
@@ -168,7 +168,7 @@ describe( 'Equation plugin', () => {
 	it( 'exposes about metadata with version and creator', () => {
 		expect( Equation.about ).toEqual( {
 			name: 'ilatex-editor',
-			version: '0.2.0',
+			version: '0.2.0-ck43.0',
 			creator: 'CDS'
 		} );
 	} );
