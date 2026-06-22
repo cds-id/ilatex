@@ -49,6 +49,24 @@ describe( 'Equation plugin', () => {
 		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="\\frac{a}{b}">\\frac{a}{b}</span></p>' );
 	} );
 
+	it( 'converts [% %] shortcode in loaded data to LaTeX widget', async () => {
+		const editor = await createEditor( '<p>[%x\\lt2%]</p>' );
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="x\\lt2">x\\lt2</span></p>' );
+	} );
+
+	it( 'converts [% %] shortcode surrounded by text', async () => {
+		const editor = await createEditor( '<p>before [%a+b%] after</p>' );
+
+		expect( editor.getData() ).toBe( '<p>before&nbsp;<span class="latex-math" data-latex="a+b">a+b</span>&nbsp;after</p>' );
+	} );
+
+	it( 'converts multiple [% %] shortcodes in the same paragraph', async () => {
+		const editor = await createEditor( '<p>[%x%] and [%y%]</p>' );
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="x">x</span>&nbsp;and&nbsp;<span class="latex-math" data-latex="y">y</span></p>' );
+	} );
+
 	it( 'updates selected LaTeX widget instead of inserting duplicate', async () => {
 		const editor = await createEditor( '<p><span class="latex-math" data-latex="x+1">x+1</span></p>' );
 
@@ -86,6 +104,36 @@ describe( 'Equation plugin', () => {
 		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="E=mc^2">E=mc^2</span></p>' );
 	} );
 
+	it( 'submits current MathLive getValue when editing existing formula', async () => {
+		const createElement = document.createElement.bind( document );
+		vi.spyOn( document, 'createElement' ).mockImplementation( ( tagName: string, options?: ElementCreationOptions ) => {
+			const element = createElement( tagName, options );
+			if ( tagName === 'math-field' ) {
+				Object.assign( element, {
+					value: 'a+b',
+					getValue: () => 'a-b',
+					setValue: ( value: string ) => {
+						( element as HTMLElement & { value: string } ).value = value;
+					}
+				} );
+			}
+			return element;
+		} );
+
+		const editor = await createEditor( '<p><span class="latex-math" data-latex="a+b">a+b</span></p>' );
+		editor.model.change( writer => {
+			const paragraph = editor.model.document.getRoot()!.getChild( 0 )! as ModelElement;
+			const formula = paragraph.getChild( 0 )!;
+			writer.setSelection( formula, 'on' );
+		} );
+
+		const button = editor.ui.componentFactory.create( 'formula' );
+		button.fire( 'execute' );
+		( document.querySelector( '[data-testid="latex-insert"]' ) as HTMLButtonElement ).click();
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="a-b">a-b</span></p>' );
+	} );
+
 	it( 'opens selected formula in editor dialog for editing', async () => {
 		const editor = await createEditor( '<p><span class="latex-math" data-latex="a+b">a+b</span></p>' );
 
@@ -120,7 +168,7 @@ describe( 'Equation plugin', () => {
 	it( 'exposes about metadata with version and creator', () => {
 		expect( Equation.about ).toEqual( {
 			name: 'ilatex-editor',
-			version: '0.1.0',
+			version: '0.2.0',
 			creator: 'CDS'
 		} );
 	} );
@@ -130,6 +178,26 @@ describe( 'Equation plugin', () => {
 		const editorElement = editor.ui.view.editable.element!;
 
 		expect( editorElement.querySelector( '.latex-math math-span' )?.textContent ).toBe( '\\frac{a}{b}' );
+	} );
+
+	it( 'double click edit updates original equation even after modal focus changes editor selection', async () => {
+		const editor = await createEditor( '<p><span class="latex-math" data-latex="a+b">a+b</span> tail</p>' );
+		const editorElement = editor.ui.view.editable.element!;
+		const equation = editorElement.querySelector( '.latex-math' ) as HTMLElement;
+
+		equation.dispatchEvent( new MouseEvent( 'dblclick', { bubbles: true, cancelable: true } ) );
+
+		editor.model.change( writer => {
+			writer.setSelection( editor.model.document.getRoot()!.getChild( 0 )!, 'end' );
+		} );
+
+		const dialog = document.querySelector( '.ck-latex-editor-dialog' ) as HTMLElement;
+		const textarea = dialog.querySelector( 'textarea' ) as HTMLTextAreaElement;
+		textarea.value = 'a-b';
+		textarea.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		( dialog.querySelector( '[data-testid="latex-insert"]' ) as HTMLButtonElement ).click();
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="a-b">a-b</span>&nbsp;tail</p>' );
 	} );
 
 	it( 'opens selected equation editor on double click without virtual keyboard', async () => {

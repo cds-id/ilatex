@@ -1,1 +1,1 @@
-export { default } from './equation';
+export { default } from './equation.js';
