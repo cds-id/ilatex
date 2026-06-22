@@ -15,7 +15,7 @@ Part of **Open CDS** — open-source programs by [Cipta Dua Saudara](https://www
 
 - TypeScript CKEditor 5 plugin.
 - Inline object widget: `latexInline`.
-- Official package name: `ilatex-editor`.
+- Official package name: `@cds.id/ilatex-editor`.
 - Creator: `CDS` / [Cipta Dua Saudara](https://www.ciptadusa.com).
 - Program: **Open CDS** open-source programs.
 - Repository: `git@github.com:cds-id/ilatex.git`.
@@ -38,7 +38,7 @@ Part of **Open CDS** — open-source programs by [Cipta Dua Saudara](https://www
 ## Install
 
 ```bash
-npm install ilatex-editor
+npm install @cds.id/ilatex-editor
 ```
 
 Peer runtime: `ckeditor5` (for the editor plugin) and `mathlive` (rendering) ship as
@@ -49,10 +49,10 @@ Package entry points:
 
 | Import | Use |
 | --- | --- |
-| `ilatex-editor` | CKEditor 5 `Equation` plugin + render utils |
-| `ilatex-editor/render` | SSR-safe render utilities (no CKEditor, no CSS) |
-| `ilatex-editor/auto` | Zero-config: renders the whole page on load |
-| `ilatex-editor/styles` | MathLive static + font CSS (bundler only) |
+| `@cds.id/ilatex-editor` | CKEditor 5 `Equation` plugin + render utils |
+| `@cds.id/ilatex-editor/render` | SSR-safe render utilities (no CKEditor, no CSS) |
+| `@cds.id/ilatex-editor/auto` | Zero-config: renders the whole page on load |
+| `@cds.id/ilatex-editor/styles` | MathLive static + font CSS (bundler only) |
 
 ## Usage in CKEditor 5
 
@@ -61,7 +61,7 @@ import 'ckeditor5/ckeditor5.css';
 import 'mathlive/fonts.css';
 import { ClassicEditor, Essentials, Paragraph } from 'ckeditor5';
 import { MathfieldElement } from 'mathlive';
-import { Equation } from 'ilatex-editor';
+import { Equation } from '@cds.id/ilatex-editor';
 
 // Required: disable MathLive's runtime font probing. Bundlers serve the fonts
 // via fonts.css @font-face; the runtime probe resolves to a wrong path and
@@ -97,7 +97,7 @@ About metadata:
 
 ```ts
 Equation.about;
-// { name: 'ilatex-editor', version: '0.1.0', creator: 'CDS' }
+// { name: 'ilatex-editor', version: '0.2.0', creator: 'CDS' }
 ```
 
 ## Rendering outside the editor
@@ -108,7 +108,7 @@ spans produced by the editor) anywhere — no editor instance required.
 ### Zero-config: render the whole page
 
 ```ts
-import 'ilatex-editor/auto';
+import '@cds.id/ilatex-editor/auto';
 ```
 
 Importing this once renders all LaTeX in the document on `DOMContentLoaded`.
@@ -118,12 +118,12 @@ updates with the exported `renderLatexInDocument()`.
 ### Manual: render a subtree or a string
 
 ```ts
-import 'ilatex-editor/styles';
+import '@cds.id/ilatex-editor/styles';
 import {
 	renderLatexInElement,
 	renderLatexInDocument,
 	renderLatexToMarkup
-} from 'ilatex-editor/render';
+} from '@cds.id/ilatex-editor/render';
 
 // Render every formula inside a container (idempotent, safe to re-run).
 renderLatexInElement( '#article' );
@@ -150,8 +150,8 @@ renderLatexInElement( root, {
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { renderLatexInElement } from 'ilatex-editor/render';
-import 'ilatex-editor/styles';
+import { renderLatexInElement } from '@cds.id/ilatex-editor/render';
+import '@cds.id/ilatex-editor/styles';
 
 export function Article( { html }: { html: string } ) {
 	const ref = useRef<HTMLDivElement>( null );
@@ -167,7 +167,7 @@ export function Article( { html }: { html: string } ) {
 ```
 
 `renderLatexToMarkup` is SSR-safe (pure string, no CSS import), so you can also
-render on the server and ship static markup; load `ilatex-editor/styles` on the
+render on the server and ship static markup; load `@cds.id/ilatex-editor/styles` on the
 client for fonts.
 
 ## Fonts
@@ -176,7 +176,7 @@ MathLive ships KaTeX woff2 fonts. In a bundler, import the CSS so `@font-face`
 URLs resolve correctly:
 
 - Editor: `import 'mathlive/fonts.css'` + `MathfieldElement.fontsDirectory = null`.
-- Render utils: `import 'ilatex-editor/styles'` (or `ilatex-editor/auto`, which
+- Render utils: `import '@cds.id/ilatex-editor/styles'` (or `@cds.id/ilatex-editor/auto`, which
   imports it for you).
 
 If you see `OTS parsing error: invalid sfntVersion` or equations in a fallback
