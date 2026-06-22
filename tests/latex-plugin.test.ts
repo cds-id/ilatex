@@ -49,6 +49,24 @@ describe( 'Equation plugin', () => {
 		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="\\frac{a}{b}">\\frac{a}{b}</span></p>' );
 	} );
 
+	it( 'converts [% %] shortcode in loaded data to LaTeX widget', async () => {
+		const editor = await createEditor( '<p>[%x\\lt2%]</p>' );
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="x\\lt2">x\\lt2</span></p>' );
+	} );
+
+	it( 'converts [% %] shortcode surrounded by text', async () => {
+		const editor = await createEditor( '<p>before [%a+b%] after</p>' );
+
+		expect( editor.getData() ).toBe( '<p>before&nbsp;<span class="latex-math" data-latex="a+b">a+b</span>&nbsp;after</p>' );
+	} );
+
+	it( 'converts multiple [% %] shortcodes in the same paragraph', async () => {
+		const editor = await createEditor( '<p>[%x%] and [%y%]</p>' );
+
+		expect( editor.getData() ).toBe( '<p><span class="latex-math" data-latex="x">x</span>&nbsp;and&nbsp;<span class="latex-math" data-latex="y">y</span></p>' );
+	} );
+
 	it( 'updates selected LaTeX widget instead of inserting duplicate', async () => {
 		const editor = await createEditor( '<p><span class="latex-math" data-latex="x+1">x+1</span></p>' );
 
@@ -150,7 +168,7 @@ describe( 'Equation plugin', () => {
 	it( 'exposes about metadata with version and creator', () => {
 		expect( Equation.about ).toEqual( {
 			name: 'ilatex-editor',
-			version: '0.1.0',
+			version: '0.2.0',
 			creator: 'CDS'
 		} );
 	} );

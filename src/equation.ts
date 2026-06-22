@@ -1,6 +1,6 @@
 import { Plugin } from 'ckeditor5';
-import LatexEditing from './latexediting';
-import LatexUI from './latexui';
+import LatexEditing from './latexediting.js';
+import LatexUI from './latexui.js';
 
 export type EquationAbout = {
 	name: string;
@@ -11,7 +11,7 @@ export type EquationAbout = {
 export default class Equation extends Plugin {
 	public static readonly about: EquationAbout = {
 		name: 'ilatex-editor',
-		version: '0.1.0',
+		version: '0.2.0',
 		creator: 'CDS'
 	};
 

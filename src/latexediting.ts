@@ -5,9 +5,12 @@ import {
 	viewToModelPositionOutsideModelElement,
 	type ViewDowncastWriter,
 	type ModelElement,
+	type ModelText,
+	type ModelWriter,
 	type ViewElement
 } from 'ckeditor5';
-import InsertLatexCommand from './insertlatexcommand';
+import InsertLatexCommand from './insertlatexcommand.js';
+import { SHORTCODE_PATTERN } from './shortcode.js';
 
 export default class LatexEditing extends Plugin {
 	public static get requires() {
@@ -27,6 +30,14 @@ export default class LatexEditing extends Plugin {
 			'viewToModelPosition',
 			viewToModelPositionOutsideModelElement( this.editor.model, viewElement => viewElement.hasClass( 'latex-math' ) )
 		);
+
+		this._registerShortcodePostFixer();
+	}
+
+	private _registerShortcodePostFixer(): void {
+		const model = this.editor.model;
+
+		model.document.registerPostFixer( writer => convertShortcodes( model, writer ) );
 	}
 
 	private _defineSchema(): void {
@@ -80,6 +91,64 @@ export default class LatexEditing extends Plugin {
 			}
 		} );
 	}
+}
+
+function convertShortcodes( model: import('ckeditor5').Editor['model'], writer: ModelWriter ): boolean {
+	let changed = false;
+
+	for ( const root of model.document.getRoots() ) {
+		const range = writer.createRangeIn( root );
+		const textNodes: ModelText[] = [];
+
+		for ( const item of range.getItems() ) {
+			if ( item.is( '$textProxy' ) && item.data.includes( '[%' ) ) {
+				textNodes.push( item.textNode );
+			}
+		}
+
+		for ( const textNode of textNodes ) {
+			if ( convertTextNode( model, writer, textNode ) ) {
+				changed = true;
+			}
+		}
+	}
+
+	return changed;
+}
+
+function convertTextNode( model: import('ckeditor5').Editor['model'], writer: ModelWriter, textNode: ModelText ): boolean {
+	const data = textNode.data;
+	SHORTCODE_PATTERN.lastIndex = 0;
+	const match = SHORTCODE_PATTERN.exec( data );
+
+	if ( !match ) {
+		return false;
+	}
+
+	const latex = match[ 1 ].trim();
+	if ( !latex ) {
+		return false;
+	}
+
+	const startOffset = ( textNode.startOffset ?? 0 ) + match.index;
+	const endOffset = startOffset + match[ 0 ].length;
+	const parent = textNode.parent;
+
+	if ( !parent ) {
+		return false;
+	}
+
+	if ( !model.schema.checkChild( parent as ModelElement, 'latexInline' ) ) {
+		return false;
+	}
+
+	const start = writer.createPositionAt( parent as ModelElement, startOffset );
+	const end = writer.createPositionAt( parent as ModelElement, endOffset );
+
+	writer.remove( writer.createRange( start, end ) );
+	writer.insertElement( 'latexInline', { latex }, parent as ModelElement, startOffset );
+
+	return true;
 }
 
 function createLatexView( modelElement: ModelElement, writer: ViewDowncastWriter, renderMath: boolean ) {
