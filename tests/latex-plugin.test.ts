@@ -168,7 +168,7 @@ describe( 'Equation plugin', () => {
 	it( 'exposes about metadata with version and creator', () => {
 		expect( Equation.about ).toEqual( {
 			name: 'ilatex-editor',
-			version: '0.2.0-ck43.5',
+			version: '0.2.0-ck43.6',
 			creator: 'CDS'
 		} );
 	} );

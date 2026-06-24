@@ -99,11 +99,26 @@ function injectMathliveCss( editor: TinyMceEditorLike ): void {
 	const style = doc.createElement( 'style' );
 	style.id = 'mathlive-static-css';
 	style.textContent = css + `
+body#tinymce, body {
+	padding-top: 0.6em;
+	padding-bottom: 0.6em;
+}
 .${ LATEX_MATH_CLASS } {
 	display: inline-block;
 	vertical-align: middle;
+	line-height: normal;
 	cursor: pointer;
 	user-select: all;
+}
+.${ LATEX_MATH_CLASS } .ML__latex {
+	line-height: normal;
+}
+/* Give lines that contain math enough height so tall formulas
+   (sums / integrals with limits, stacked fractions) are not clipped. */
+p:has(> .${ LATEX_MATH_CLASS }),
+li:has(> .${ LATEX_MATH_CLASS }),
+div:has(> .${ LATEX_MATH_CLASS }) {
+	line-height: 2.2;
 }
 .${ LATEX_MATH_CLASS }[data-mce-selected] {
 	outline: 2px solid #2563eb;
