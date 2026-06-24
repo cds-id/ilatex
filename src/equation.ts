@@ -11,7 +11,7 @@ export type EquationAbout = {
 export default class Equation extends Plugin {
 	public static readonly about: EquationAbout = {
 		name: 'ilatex-editor',
-		version: '0.2.0-ck43.3',
+		version: '0.2.0-ck43.4',
 		creator: 'CDS'
 	};
 

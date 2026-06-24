@@ -137,16 +137,41 @@ function collectMathliveCssFromParent(): string {
 			continue;
 		}
 
+		const base = sheet.href ?? document.baseURI;
+
 		for ( const rule of Array.from( rules ) ) {
 			const text = rule.cssText;
 
 			if ( text.includes( 'ML__' ) || text.includes( 'KaTeX' ) || text.includes( 'mathlive' ) ) {
-				chunks.push( text );
+				// Resolve relative url() against the source sheet so @font-face fonts
+				// still load once the CSS is moved into the editor iframe document.
+				chunks.push( absolutizeCssUrls( text, base ) );
 			}
 		}
 	}
 
 	return chunks.join( '\n' );
+}
+
+/**
+ * Rewrite relative `url(...)` references in a CSS rule to absolute URLs resolved
+ * against `base`, so @font-face fonts still resolve after the rule text is moved
+ * into another document (the editor iframe). Leaves absolute/data/blob URLs.
+ */
+function absolutizeCssUrls( cssText: string, base: string ): string {
+	return cssText.replace( /url\(\s*(['"]?)([^'")]+)\1\s*\)/g, ( whole, quote: string, url: string ) => {
+		const trimmed = url.trim();
+
+		if ( /^(data:|blob:|https?:|\/\/|#)/.test( trimmed ) ) {
+			return whole;
+		}
+
+		try {
+			return `url("${ new URL( trimmed, base ).href }")`;
+		} catch {
+			return whole;
+		}
+	} );
 }
 
 /** Render any `.latex-math[data-latex]` spans inside the editor body that are not yet rendered. */
