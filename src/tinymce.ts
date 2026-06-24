@@ -30,7 +30,7 @@ export interface TinyMceEditorLike {
 			} ): void;
 		};
 	};
-	on( name: string, handler: ( event: { target?: Element; element?: Element; node?: Element } & Event ) => void ): void;
+	on( name: string, handler: ( event: { target?: Element; element?: Element; node?: Element; content?: string } & Event ) => void ): void;
 	selection: {
 		getNode(): Element;
 	};
@@ -250,6 +250,34 @@ export function setupLatexEquation( editor: TinyMceEditorLike ): void {
 		renderEditorBody( editor );
 	} );
 
+	// Intercept paste (incl. PowerPaste): convert pasted math — MathType / WIRIS
+	// `<math>` + `<img>` formulas — into clean `.latex-math[data-latex]` spans so
+	// they are NOT kept as images. Runs on the pasted fragment before it lands.
+	editor.on( 'PastePreProcess', event => {
+		if ( typeof event.content !== 'string' ) {
+			return;
+		}
+
+		const doc = getEditorDoc( editor ) ?? ( typeof document !== 'undefined' ? document : null );
+
+		if ( !doc ) {
+			return;
+		}
+
+		const holder = doc.createElement( 'div' );
+		holder.innerHTML = event.content;
+
+		if ( convertPastedMath( holder ) ) {
+			event.content = holder.innerHTML;
+		}
+	} );
+
+	editor.on( 'PastePostProcess', event => {
+		if ( event.node && convertPastedMath( event.node ) ) {
+			// rendering happens via the SetContent handler that follows paste
+		}
+	} );
+
 	// Convert [% ... %] shortcodes as the user types/pastes.
 	editor.on( 'input', () => {
 		if ( convertShortcodesInBody( editor ) ) {
@@ -275,6 +303,161 @@ export function setupLatexEquation( editor: TinyMceEditorLike ): void {
 			span.textContent = latex;
 		} );
 	} );
+}
+
+/**
+ * Convert pasted math into clean `.latex-math[data-latex]` spans so it is not
+ * kept as an image. Handles, in priority order:
+ *  - WIRIS / MathType `<img>` carrying LaTeX (`data-latex`) or MathML
+ *    (`data-mathml` / WIRIS `<img class="Wirisformula">`);
+ *  - MathML `<math>` with a TeX annotation (`<annotation encoding="...tex">`);
+ *  - existing `.latex-math[data-latex]` spans (normalized to unrendered);
+ *  - `[% ... %]` shortcodes inside the fragment.
+ * Returns true if anything was converted. Resulting spans are unrendered;
+ * renderEditorBody (via the post-paste SetContent) renders them.
+ */
+function convertPastedMath( root: Element ): boolean {
+	const doc = root.ownerDocument;
+	let changed = false;
+
+	// 1. MathType / WIRIS images.
+	root.querySelectorAll<HTMLImageElement>( 'img' ).forEach( img => {
+		const latex = extractLatexFromImg( img );
+
+		if ( latex ) {
+			img.replaceWith( createLatexSpan( doc, latex ) );
+			changed = true;
+		}
+	} );
+
+	// 2. MathML <math> blocks with a TeX annotation.
+	root.querySelectorAll( 'math' ).forEach( math => {
+		const latex = extractTexAnnotation( math );
+
+		if ( latex ) {
+			math.replaceWith( createLatexSpan( doc, latex ) );
+			changed = true;
+		}
+	} );
+
+	// 3. Existing .latex-math spans — normalize to unrendered (strip pasted markup).
+	root.querySelectorAll<HTMLElement>( `.${ LATEX_MATH_CLASS }[data-latex]` ).forEach( span => {
+		const latex = span.getAttribute( 'data-latex' ) ?? '';
+		span.classList.remove( RENDERED_CLASS );
+		span.removeAttribute( 'contenteditable' );
+		span.textContent = latex;
+	} );
+
+	// 4. [% ... %] shortcodes in text nodes.
+	const walker = doc.createTreeWalker( root, NodeFilter.SHOW_TEXT, {
+		acceptNode( node ) {
+			const parent = ( node as Text ).parentElement;
+
+			if ( !parent || parent.closest( `.${ LATEX_MATH_CLASS }` ) ) {
+				return NodeFilter.FILTER_REJECT;
+			}
+
+			return node.nodeValue && node.nodeValue.includes( '[%' )
+				? NodeFilter.FILTER_ACCEPT
+				: NodeFilter.FILTER_REJECT;
+		}
+	} );
+
+	const textNodes: Text[] = [];
+	let current = walker.nextNode();
+
+	while ( current ) {
+		textNodes.push( current as Text );
+		current = walker.nextNode();
+	}
+
+	for ( const textNode of textNodes ) {
+		if ( replaceShortcodesInTextNode( doc, textNode ) ) {
+			changed = true;
+		}
+	}
+
+	return changed;
+}
+
+function createLatexSpan( doc: Document, latex: string ): HTMLElement {
+	const span = doc.createElement( 'span' );
+	span.className = LATEX_MATH_CLASS;
+	span.setAttribute( 'data-latex', latex );
+	span.textContent = latex;
+	return span;
+}
+
+/** Pull LaTeX out of a WIRIS / MathType image, if present. */
+function extractLatexFromImg( img: HTMLImageElement ): string | null {
+	// MathType/WIRIS often store LaTeX directly.
+	const dataLatex = img.getAttribute( 'data-latex' );
+
+	if ( dataLatex ) {
+		return cleanWirisLatex( dataLatex );
+	}
+
+	// WIRIS images: alt usually holds the LaTeX (or a math description).
+	const isWiris = img.classList.contains( 'Wirisformula' ) || /wiris|mathtype/i.test( img.getAttribute( 'data-mathml' ) ?? '' );
+	const mathml = img.getAttribute( 'data-mathml' );
+
+	if ( mathml ) {
+		const fromMathml = extractTexFromMathmlString( mathml );
+
+		if ( fromMathml ) {
+			return fromMathml;
+		}
+	}
+
+	const alt = img.getAttribute( 'alt' );
+
+	if ( isWiris && alt && alt.trim() ) {
+		return cleanWirisLatex( alt );
+	}
+
+	return null;
+}
+
+/** Extract a TeX annotation from a MathML <math> element. */
+function extractTexAnnotation( math: Element ): string | null {
+	const annotation = Array.from( math.querySelectorAll( 'annotation' ) ).find( node => {
+		const enc = node.getAttribute( 'encoding' ) ?? '';
+		return /tex/i.test( enc );
+	} );
+
+	const tex = annotation?.textContent?.trim();
+	return tex ? cleanWirisLatex( tex ) : null;
+}
+
+/** Parse a MathML string (e.g. from data-mathml) and pull its TeX annotation. */
+function extractTexFromMathmlString( mathml: string ): string | null {
+	if ( typeof DOMParser === 'undefined' ) {
+		return null;
+	}
+
+	// WIRIS sometimes HTML-escapes the MathML (« math » style); normalize.
+	const normalized = mathml
+		.replace( /«/g, '<' )
+		.replace( /»/g, '>' )
+		.replace( /§/g, '&' );
+
+	try {
+		const parsed = new DOMParser().parseFromString( normalized, 'text/html' );
+		const math = parsed.querySelector( 'math' );
+		return math ? extractTexAnnotation( math ) : null;
+	} catch {
+		return null;
+	}
+}
+
+/** Strip common WIRIS LaTeX wrappers like `$$...$$` / `\(...\)`. */
+function cleanWirisLatex( latex: string ): string {
+	return latex
+		.trim()
+		.replace( /^\$\$?([\s\S]*?)\$\$?$/, '$1' )
+		.replace( /^\\\(([\s\S]*?)\\\)$/, '$1' )
+		.replace( /^\\\[([\s\S]*?)\\\]$/, '$1' )
+		.trim();
 }
 
 /**
@@ -381,15 +564,38 @@ function updateOrInsert( editor: TinyMceEditorLike, existing: HTMLElement | null
 	}
 
 	if ( existing ) {
-		existing.setAttribute( 'data-latex', trimmed );
-		existing.classList.add( LATEX_MATH_CLASS, RENDERED_CLASS );
-		existing.setAttribute( 'contenteditable', 'false' );
-		existing.innerHTML = convertLatexToMarkup( trimmed );
+		renderSpan( existing, trimmed );
 		emitChange( editor );
 		return;
 	}
 
-	editor.insertContent( buildLatexSpan( trimmed ) );
+	// Insert a clean, marker-only span through TinyMCE's parser (rendered MathLive
+	// markup uses inline styles that strict editor configs strip, leaving the
+	// equation half-rendered). Then render it directly in the DOM, bypassing the
+	// content filter, and re-select it so the caret lands after the equation.
+	const id = `ilatex-${ Date.now() }-${ Math.floor( Math.random() * 1e6 ) }`;
+	const safe = escapeHtml( trimmed );
+	editor.insertContent(
+		`<span id="${ id }" class="${ LATEX_MATH_CLASS }" data-latex="${ safe }">${ safe }</span>`
+	);
+
+	const doc = getEditorDoc( editor );
+	const inserted = doc?.getElementById( id ) ?? editor.getBody?.()?.querySelector( `#${ id }` ) ?? null;
+
+	if ( inserted ) {
+		inserted.removeAttribute( 'id' );
+		renderSpan( inserted, trimmed );
+	}
+
+	emitChange( editor );
+}
+
+/** Render (or re-render) a `.latex-math` span in place with MathLive markup. */
+function renderSpan( span: Element, latex: string ): void {
+	span.setAttribute( 'data-latex', latex );
+	span.classList.add( LATEX_MATH_CLASS, RENDERED_CLASS );
+	span.setAttribute( 'contenteditable', 'false' );
+	span.innerHTML = convertLatexToMarkup( latex );
 }
 
 /**

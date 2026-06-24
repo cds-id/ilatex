@@ -9,7 +9,7 @@ import {
 } from '../src/tinymce';
 
 type ButtonSpec = Parameters<TinyMceEditorLike[ 'ui' ][ 'registry' ][ 'addButton' ]>[ 1 ];
-type DblHandler = ( event: { target?: Element } & Event ) => void;
+type DblHandler = ( event: { target?: Element; node?: Element; content?: string } & Event ) => void;
 
 function createFakeEditor( selectedNode: Element, body?: HTMLElement ) {
 	const buttons = new Map<string, ButtonSpec>();
@@ -77,7 +77,7 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 	} );
 
 	it( 'inserts a latex-math span when toolbar button submits', () => {
-		const { editor, buttons, inserted } = createFakeEditor( document.createElement( 'p' ) );
+		const { editor, buttons, inserted, editorBody } = createFakeEditor( document.createElement( 'p' ) );
 
 		setupLatexEquation( editor );
 		buttons.get( 'formula' )!.onAction();
@@ -92,7 +92,13 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 
 		expect( inserted.length ).toBe( 1 );
 		expect( inserted[ 0 ] ).toContain( 'data-latex="E=mc^2"' );
-		expect( inserted[ 0 ] ).toContain( 'class="latex-math latex-rendered"' );
+		// insertContent receives a clean marker span (no rendered markup, so strict
+		// editor configs cannot strip it); rendering happens in the DOM afterwards.
+		expect( inserted[ 0 ] ).not.toContain( 'ML__' );
+		const rendered = editorBody.querySelector( '.latex-math' )!;
+		expect( rendered.getAttribute( 'data-latex' ) ).toBe( 'E=mc^2' );
+		expect( rendered.classList.contains( 'latex-rendered' ) ).toBe( true );
+		expect( rendered.hasAttribute( 'id' ) ).toBe( false );
 		expect( getDialog() ).toBeFalsy();
 	} );
 
@@ -183,6 +189,62 @@ describe( 'TinyMCE LaTeX equation plugin', () => {
 		expect( span.hasAttribute( 'contenteditable' ) ).toBe( false );
 		expect( span.innerHTML ).toBe( 'E=mc^2' );
 		expect( node.innerHTML ).not.toContain( 'ML__' );
+	} );
+
+	it( 'converts pasted MathType <math> with TeX annotation to a latex-math span (PastePostProcess)', () => {
+		const { editor, handlers } = createFakeEditor( document.createElement( 'p' ) );
+		setupLatexEquation( editor );
+
+		const node = document.createElement( 'div' );
+		node.innerHTML = '<p>x <math xmlns="http://www.w3.org/1998/Math/MathML">' +
+			'<semantics><mrow><mi>E</mi></mrow>' +
+			'<annotation encoding="application/x-tex">E=mc^2</annotation></semantics></math> y</p>';
+
+		handlers.get( 'PastePostProcess' )!( { node } as never );
+
+		const span = node.querySelector( '.latex-math[data-latex]' );
+		expect( span ).toBeTruthy();
+		expect( span!.getAttribute( 'data-latex' ) ).toBe( 'E=mc^2' );
+		expect( node.querySelector( 'math' ) ).toBeFalsy();
+	} );
+
+	it( 'converts pasted WIRIS image (data-latex) to a latex-math span', () => {
+		const { editor, handlers } = createFakeEditor( document.createElement( 'p' ) );
+		setupLatexEquation( editor );
+
+		const node = document.createElement( 'div' );
+		node.innerHTML = '<p><img class="Wirisformula" data-latex="\\frac{a}{b}" alt="frac"></p>';
+
+		handlers.get( 'PastePostProcess' )!( { node } as never );
+
+		const span = node.querySelector( '.latex-math[data-latex]' );
+		expect( span ).toBeTruthy();
+		expect( span!.getAttribute( 'data-latex' ) ).toBe( '\\frac{a}{b}' );
+		expect( node.querySelector( 'img' ) ).toBeFalsy();
+	} );
+
+	it( 'strips $$...$$ wrappers from pasted WIRIS LaTeX', () => {
+		const { editor, handlers } = createFakeEditor( document.createElement( 'p' ) );
+		setupLatexEquation( editor );
+
+		const node = document.createElement( 'div' );
+		node.innerHTML = '<img class="Wirisformula" alt="$$x^2$$">';
+
+		handlers.get( 'PastePostProcess' )!( { node } as never );
+
+		expect( node.querySelector( '.latex-math' )!.getAttribute( 'data-latex' ) ).toBe( 'x^2' );
+	} );
+
+	it( 'converts pasted math in PastePreProcess content string', () => {
+		const { editor, handlers } = createFakeEditor( document.createElement( 'p' ) );
+		setupLatexEquation( editor );
+
+		const event = { content: '<img class="Wirisformula" data-latex="a+b">' };
+		handlers.get( 'PastePreProcess' )!( event as never );
+
+		expect( event.content ).toContain( 'class="latex-math"' );
+		expect( event.content ).toContain( 'data-latex="a+b"' );
+		expect( event.content ).not.toContain( '<img' );
 	} );
 
 	it( 'registers via PluginManager', () => {

@@ -35,6 +35,10 @@ tinymce.init( {
 	skin: false,
 	content_css: false,
 	content_style: contentCss,
+	// Simulate a strict host config (like LMS) that would strip inline styles
+	// from inserted markup, to verify equations still render.
+	verify_html: true,
+	valid_elements: 'p,strong/b,em/i,ul,ol,li,a[href],span[class|data-latex|contenteditable]',
 	setup: setupLatexEquation,
 	init_instance_callback: editor => {
 		const refresh = () => {

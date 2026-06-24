@@ -177,6 +177,12 @@ The TinyMCE plugin is CKEditor-free: `@cds.id/ilatex-editor/tinymce` only pulls
 MathLive + the shared dialog. Works with TinyMCE 5, 6 and 7. It:
 
 - renders equations **inside the editor iframe** (injects MathLive CSS there);
+- inserts equations as a clean marker span then renders them in the DOM, so
+  strict editor configs (`valid_elements` / `verify_html`) cannot strip the
+  rendered markup and leave equations half-rendered;
+- intercepts paste (incl. PowerPaste): pasted **MathType / WIRIS** formulas
+  (`<math>` with a TeX annotation, or WIRIS `<img>`) are converted to
+  `.latex-math` spans instead of being kept as images;
 - auto-converts `[% ... %]` shortcodes as you type, paste, or load content;
 - serializes **clean** HTML — `<span class="latex-math" data-latex="...">latex</span>`
   (rendered markup is stripped on save), the same format the CKEditor plugin
