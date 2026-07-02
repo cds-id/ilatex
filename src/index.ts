@@ -7,6 +7,9 @@ export {
 	renderLatexInElement,
 	renderLatexInDocument,
 	renderLatexToMarkup,
+	renderMarkdownWithLatex,
+	renderMarkdownInElement,
 	type RenderLatexOptions
 } from './render.js';
+export { markdownToHtml } from './markdown.js';
 export { SHORTCODE_PATTERN, LATEX_MATH_CLASS } from './shortcode.js';

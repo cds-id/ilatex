@@ -171,6 +171,46 @@ export function Article( { html }: { html: string } ) {
 render on the server and ship static markup; load `@cds.id/ilatex-editor/styles` on the
 client for fonts.
 
+### Markdown viewer (view-only)
+
+Render Markdown that contains LaTeX for **display** (never in the editor). The
+Markdown pass masks `.latex-math` spans and `[%...%]` shortcodes before parsing
+so LaTeX bodies (e.g. `x_1`) are never mangled by Markdown inline rules, then
+renders the math. Dependency-free Markdown (headings, bold/italic/strikethrough,
+inline + fenced code, lists, blockquotes, links, images, `---`).
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { renderMarkdownInElement } from '@cds.id/ilatex-editor/render';
+import '@cds.id/ilatex-editor/styles';
+
+export function MarkdownView( { markdown }: { markdown: string } ) {
+	const ref = useRef<HTMLDivElement>( null );
+
+	useEffect( () => {
+		if ( ref.current ) {
+			renderMarkdownInElement( ref.current, markdown );
+		}
+	}, [ markdown ] );
+
+	return <div ref={ ref } />;
+}
+```
+
+Or get the HTML string directly:
+
+```ts
+import { renderMarkdownWithLatex, markdownToHtml } from '@cds.id/ilatex-editor/render';
+
+renderMarkdownWithLatex( '# Energy\n\n[%E=mc^2%] is **famous**.' );
+// -> "<h1>Energy</h1>\n<p><span class=\"latex-math ...\">...</span> is <strong>famous</strong>.</p>"
+
+markdownToHtml( '**just markdown**' ); // no math step, pure string (SSR-safe)
+```
+
+This lives on the render/view path only. The CKEditor and TinyMCE editors are
+unchanged — they still store the same clean `<span class="latex-math" ...>` HTML.
+
 ## Usage in TinyMCE 5
 
 The TinyMCE plugin is CKEditor-free: `@cds.id/ilatex-editor/tinymce` only pulls

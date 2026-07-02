@@ -1,6 +1,6 @@
 {
   "name": "@cds.id/ilatex-editor",
-  "version": "0.2.0-ck43.6",
+  "version": "0.2.0-ck43.7",
   "description": "CKEditor 5 Equation editor by CDS for LaTeX formulas.",
   "author": "CDS",
   "repository": {
@@ -18,6 +18,10 @@
     "./render": {
       "types": "./dist/render.d.ts",
       "import": "./dist/render.js"
+    },
+    "./markdown": {
+      "types": "./dist/markdown.d.ts",
+      "import": "./dist/markdown.js"
     },
     "./auto": {
       "types": "./dist/auto.d.ts",

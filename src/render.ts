@@ -1,5 +1,6 @@
 import { convertLatexToMarkup } from 'mathlive';
 import { SHORTCODE_PATTERN, LATEX_MATH_CLASS } from './shortcode.js';
+import { markdownToHtml } from './markdown.js';
 
 export interface RenderLatexOptions {
 	/**
@@ -62,6 +63,75 @@ export function renderLatexInElement(
 	if ( shortcodes ) {
 		renderShortcodes( element, renderedClass );
 	}
+}
+
+/**
+ * Convert a Markdown string that may contain LaTeX (`.latex-math` spans or
+ * `[%...%]` shortcodes) into rendered HTML, VIEW-ONLY.
+ *
+ * Pipeline: mask any existing `.latex-math` spans and `[%...%]` shortcodes so
+ * the Markdown pass cannot mangle their LaTeX -> run Markdown -> unmask ->
+ * render the math to MathLive markup. The result is a static HTML string; it
+ * does not touch any editor instance.
+ *
+ * Requires a DOM (browser or jsdom) because math rendering runs on elements.
+ */
+export function renderMarkdownWithLatex(
+	source: string,
+	options: RenderLatexOptions = {}
+): string {
+	if ( typeof document === 'undefined' ) {
+		return markdownToHtml( source );
+	}
+
+	// 1. Mask latex-math spans and [%...%] shortcodes to opaque placeholders so
+	//    Markdown inline rules (e.g. `_`, `*`, `[`) never corrupt LaTeX bodies.
+	const masks: string[] = [];
+	const mask = ( original: string ): string => {
+		masks.push( original );
+		return `\u0000M${ masks.length - 1 }\u0000`;
+	};
+
+	let masked = source.replace(
+		/<span\b[^>]*class="[^"]*\blatex-math\b[^"]*"[^>]*>[\s\S]*?<\/span>/gi,
+		m => mask( m )
+	);
+
+	SHORTCODE_PATTERN.lastIndex = 0;
+	masked = masked.replace( SHORTCODE_PATTERN, m => mask( m ) );
+
+	// 2. Markdown -> HTML.
+	let html = markdownToHtml( masked );
+
+	// 3. Unmask (placeholders survive HTML escaping since they are U+0000-wrapped).
+	html = html.replace( /\u0000M(\d+)\u0000/g, ( _m, i: string ) => masks[ Number( i ) ] );
+
+	// 4. Render the math in the resulting HTML.
+	const holder = document.createElement( 'div' );
+	holder.innerHTML = html;
+	renderLatexInElement( holder, options );
+
+	return holder.innerHTML;
+}
+
+/**
+ * Render Markdown-with-LaTeX from `source` into `target` (element or selector),
+ * VIEW-ONLY. Sets the target's innerHTML to the fully rendered HTML.
+ */
+export function renderMarkdownInElement(
+	target: HTMLElement | string,
+	source: string,
+	options: RenderLatexOptions = {}
+): void {
+	const element = typeof target === 'string'
+		? ( document.querySelector( target ) as HTMLElement | null )
+		: target;
+
+	if ( !element ) {
+		return;
+	}
+
+	element.innerHTML = renderMarkdownWithLatex( source, options );
 }
 
 /**
