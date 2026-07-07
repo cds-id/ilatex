@@ -34,7 +34,9 @@
     "demo": "vite --host 0.0.0.0 sample",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && vite build sample --outDir ../dist-demo"
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && vite build sample --outDir ../dist-demo",
+    "build:demo": "vite build sample --outDir ../dist-demo",
+    "deploy": "npm run build:demo && wrangler pages deploy dist-demo --project-name ilatex-demo"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-core": "48.2.0",
@@ -54,6 +56,7 @@
     "jsdom": "^29.1.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "wrangler": "^4.107.1"
   }
 }
