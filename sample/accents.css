@@ -1,0 +1,162 @@
+.acc-main {
+	max-width: 1040px;
+}
+
+.acc-header h1 {
+	margin-bottom: 0.25rem;
+}
+
+.acc-sub {
+	margin-top: 0;
+	color: #475569;
+	max-width: 60ch;
+}
+
+.acc-sub code,
+.acc-card-code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.acc-playground {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+	margin: 1.5rem 0 2.5rem;
+}
+
+@media (max-width: 720px) {
+	.acc-playground {
+		grid-template-columns: 1fr;
+	}
+}
+
+.acc-pane {
+	display: flex;
+	flex-direction: column;
+}
+
+.acc-label {
+	display: block;
+	margin: 0.75rem 0 0.35rem;
+	font-weight: 600;
+	font-size: 0.85rem;
+	color: #334155;
+}
+
+.acc-label:first-child {
+	margin-top: 0;
+}
+
+.acc-input {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 0.75rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.95rem;
+	resize: vertical;
+}
+
+.acc-mathfield {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 4rem;
+	padding: 0.75rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	background: #fff;
+	font-size: 1.5rem;
+}
+
+.acc-preview {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 8rem;
+	padding: 1rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	background: #fff;
+	font-size: 2.2rem;
+}
+
+.acc-error {
+	margin-top: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.4rem;
+	background: #fef2f2;
+	color: #b91c1c;
+	font-size: 0.85rem;
+}
+
+.acc-gallery-title {
+	margin-bottom: 1rem;
+}
+
+.acc-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 0.75rem;
+}
+
+.acc-gallery-wide {
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.acc-gallery-wide .acc-card-code {
+	white-space: pre;
+	text-align: left;
+	overflow-x: auto;
+	max-width: 100%;
+	line-height: 1.3;
+}
+
+.acc-gallery-wide .acc-card-render {
+	font-size: 1.3rem;
+}
+
+.acc-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.85rem 0.6rem;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.6rem;
+	background: #fff;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s;
+}
+
+.acc-card:hover {
+	border-color: #6366f1;
+	box-shadow: 0 6px 20px rgb(99 102 241 / 0.18);
+}
+
+.acc-card:active {
+	transform: translateY(1px);
+}
+
+.acc-card-render {
+	min-height: 2.4rem;
+	display: flex;
+	align-items: center;
+	font-size: 1.6rem;
+}
+
+.acc-card-code {
+	font-size: 0.8rem;
+	color: #0f172a;
+	background: #f1f5f9;
+	padding: 0.15rem 0.4rem;
+	border-radius: 0.3rem;
+	word-break: break-all;
+	text-align: center;
+}
+
+.acc-card-label {
+	font-size: 0.72rem;
+	color: #64748b;
+}

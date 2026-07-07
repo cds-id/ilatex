@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>iLaTeX — Accents, Decorations & Matrices Playground</title>
+		<script type="module" src="/accents.ts"></script>
+	</head>
+	<body>
+		<main class="acc-main">
+			<header class="acc-header">
+				<h1>iLaTeX — Accents, Decorations &amp; Matrices</h1>
+				<p class="acc-sub">
+					Live LaTeX editor with instant preview, powered by
+					<code>ilatex-editor</code> (MathLive). Type in the editor, or click any
+					card below to load it.
+				</p>
+			</header>
+
+			<section class="acc-playground">
+				<div class="acc-pane">
+					<label class="acc-label" for="latex-input">LaTeX source</label>
+					<textarea
+						id="latex-input"
+						class="acc-input"
+						spellcheck="false"
+						rows="4"
+					>\hat{\theta} + \vec{F} = \overbrace{a''}^{\text{prime}}</textarea>
+					<label class="acc-label">Visual editor</label>
+					<math-field id="math-field" class="acc-mathfield"></math-field>
+				</div>
+				<div class="acc-pane">
+					<label class="acc-label">Preview</label>
+					<div id="preview" class="acc-preview"></div>
+					<div id="error" class="acc-error" hidden></div>
+				</div>
+			</section>
+
+			<section>
+				<h2 class="acc-gallery-title">Supported accents &amp; decorations</h2>
+				<div id="gallery" class="acc-gallery"></div>
+			</section>
+
+			<section>
+				<h2 class="acc-gallery-title">Matrices, arrays &amp; environments</h2>
+				<div id="matrix-gallery" class="acc-gallery acc-gallery-wide"></div>
+			</section>
+		</main>
+	</body>
+</html>
