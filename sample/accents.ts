@@ -60,6 +60,12 @@ const preview = document.getElementById( 'preview' ) as HTMLElement;
 const errorBox = document.getElementById( 'error' ) as HTMLElement;
 const gallery = document.getElementById( 'gallery' ) as HTMLElement;
 const matrixGallery = document.getElementById( 'matrix-gallery' ) as HTMLElement;
+const collection = document.getElementById( 'collection' ) as HTMLElement;
+const collectionEmpty = document.getElementById( 'collection-empty' ) as HTMLElement;
+const addBtn = document.getElementById( 'add-btn' ) as HTMLButtonElement;
+const clearBtn = document.getElementById( 'clear-btn' ) as HTMLButtonElement;
+
+const STORAGE_KEY = 'ilatex-collection';
 
 let syncing = false;
 
@@ -123,6 +129,92 @@ function buildGallery(
 
 buildGallery( gallery, CASES );
 buildGallery( matrixGallery, MATRIX_CASES );
+
+// --- Collection: add / remove formulas like a normal playground ---------
+
+function loadCollection(): string[] {
+	try {
+		const raw = localStorage.getItem( STORAGE_KEY );
+		const parsed = raw ? JSON.parse( raw ) : [];
+		return Array.isArray( parsed ) ? parsed.filter( ( x ): x is string => typeof x === 'string' ) : [];
+	} catch {
+		return [];
+	}
+}
+
+function saveCollection( items: string[] ): void {
+	try {
+		localStorage.setItem( STORAGE_KEY, JSON.stringify( items ) );
+	} catch {
+		/* ignore storage failures (private mode, quota) */
+	}
+}
+
+let collectionItems: string[] = loadCollection();
+
+function renderCollection(): void {
+	collection.textContent = '';
+	collectionEmpty.hidden = collectionItems.length > 0;
+	clearBtn.hidden = collectionItems.length === 0;
+
+	collectionItems.forEach( ( latex, index ) => {
+		const card = document.createElement( 'div' );
+		card.className = 'acc-card acc-card-collection';
+
+		const remove = document.createElement( 'button' );
+		remove.type = 'button';
+		remove.className = 'acc-remove';
+		remove.title = 'Remove';
+		remove.setAttribute( 'aria-label', 'Remove' );
+		remove.textContent = '✕';
+		remove.addEventListener( 'click', event => {
+			event.stopPropagation();
+			removeItem( index );
+		} );
+
+		const rendered = document.createElement( 'div' );
+		rendered.className = 'acc-card-render';
+		rendered.innerHTML = renderLatexToMarkup( latex );
+
+		const code = document.createElement( 'code' );
+		code.className = 'acc-card-code';
+		code.textContent = latex;
+
+		const load = document.createElement( 'button' );
+		load.type = 'button';
+		load.className = 'acc-card-load';
+		load.textContent = 'Load into editor';
+		load.addEventListener( 'click', () => setLatex( latex, 'external' ) );
+
+		card.append( remove, rendered, code, load );
+		collection.appendChild( card );
+	} );
+}
+
+function addItem( latex: string ): void {
+	const value = latex.trim();
+	if ( !value ) {
+		return;
+	}
+	collectionItems = [ ...collectionItems, value ];
+	saveCollection( collectionItems );
+	renderCollection();
+}
+
+function removeItem( index: number ): void {
+	collectionItems = collectionItems.filter( ( _, i ) => i !== index );
+	saveCollection( collectionItems );
+	renderCollection();
+}
+
+addBtn.addEventListener( 'click', () => addItem( input.value ) );
+clearBtn.addEventListener( 'click', () => {
+	collectionItems = [];
+	saveCollection( collectionItems );
+	renderCollection();
+} );
+
+renderCollection();
 
 // Seed the editor with the initial textarea content.
 setLatex( input.value, 'external' );

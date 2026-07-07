@@ -33,7 +33,26 @@
 					<label class="acc-label">Preview</label>
 					<div id="preview" class="acc-preview"></div>
 					<div id="error" class="acc-error" hidden></div>
+					<div class="acc-actions">
+						<button id="add-btn" type="button" class="acc-btn acc-btn-primary">
+							+ Add to collection
+						</button>
+					</div>
 				</div>
+			</section>
+
+			<section>
+				<div class="acc-collection-head">
+					<h2 class="acc-gallery-title">My collection</h2>
+					<button id="clear-btn" type="button" class="acc-btn" hidden>
+						Clear all
+					</button>
+				</div>
+				<p id="collection-empty" class="acc-sub">
+					Nothing here yet. Edit a formula above (or click a card below) and press
+					<strong>Add to collection</strong>. Remove items with the ✕ button.
+				</p>
+				<div id="collection" class="acc-gallery acc-gallery-wide"></div>
 			</section>
 
 			<section>
