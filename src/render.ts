@@ -26,7 +26,32 @@ const DEFAULT_RENDERED_CLASS = 'latex-rendered';
  * Render a single LaTeX string to static HTML markup (MathLive, no editor).
  */
 export function renderLatexToMarkup( latex: string ): string {
-	return convertLatexToMarkup( latex );
+	return convertLatexToMarkup( normalizeRenderLatex( latex ) );
+}
+
+function normalizeRenderLatex( latex: string ): string {
+	let normalized = normalizeColorboxMath( latex );
+
+	if (
+		!/^\s*\\begin\{/.test( normalized ) &&
+		( /\\\\/.test( normalized ) || /\\cr\b/.test( normalized ) )
+	) {
+		normalized = `\\begin{aligned}${ normalized.replace( /\\cr\b/g, '\\\\' ) }\\end{aligned}`;
+	}
+
+	return normalized;
+}
+
+function normalizeColorboxMath( latex: string ): string {
+	return latex.replace( /\\colorbox\{([^{}]+)\}\{([^{}]*)\}/g, ( match, color: string, body: string ) => {
+		const trimmed = body.trim();
+
+		if ( /^\$[\s\S]*\$$/.test( trimmed ) || /^\\\([\s\S]*\\\)$/.test( trimmed ) ) {
+			return match;
+		}
+
+		return `\\colorbox{${ color }}{$${ body }$}`;
+	} );
 }
 
 /**
@@ -154,7 +179,7 @@ function renderMathSpans( root: HTMLElement, renderedClass: string ): void {
 		}
 
 		const latex = span.getAttribute( 'data-latex' ) ?? '';
-		span.innerHTML = convertLatexToMarkup( latex );
+		span.innerHTML = renderLatexToMarkup( latex );
 		span.classList.add( renderedClass );
 	} );
 }
@@ -219,7 +244,7 @@ function replaceShortcodesInTextNode( textNode: Text, renderedClass: string ): v
 			const span = document.createElement( 'span' );
 			span.className = `${ LATEX_MATH_CLASS } ${ renderedClass }`;
 			span.setAttribute( 'data-latex', latex );
-			span.innerHTML = convertLatexToMarkup( latex );
+			span.innerHTML = renderLatexToMarkup( latex );
 			fragment.appendChild( span );
 		} else {
 			fragment.appendChild( document.createTextNode( match[ 0 ] ) );

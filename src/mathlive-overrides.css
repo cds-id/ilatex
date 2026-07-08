@@ -1,0 +1,4 @@
+/* Keep MathLive colorbox backgrounds visible when static CSS draws them via ::before. */
+.ML__bg {
+	isolation: isolate;
+}

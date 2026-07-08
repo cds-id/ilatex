@@ -38,7 +38,10 @@ const CASES: Array<{ latex: string; label: string }> = [
 	{ latex: `\\overrightarrow{AB}`, label: '\\overrightarrow' },
 	{ latex: `\\underrightarrow{AB}`, label: '\\underrightarrow' },
 	{ latex: `\\overbrace{AB}`, label: '\\overbrace' },
-	{ latex: `\\underbrace{AB}`, label: '\\underbrace' }
+	{ latex: `\\underbrace{AB}`, label: '\\underbrace' },
+	{ latex: `\\colorbox{aqua}{F=m \\cdot a}`, label: '\\colorbox' },
+	{ latex: `a\\\\b`, label: '\\\\ line break' },
+	{ latex: `a\\cr b`, label: '\\cr line break' }
 ];
 
 // Matrix / array / cases / aligned environments.

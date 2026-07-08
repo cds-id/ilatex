@@ -13,6 +13,28 @@ describe( 'renderLatex utils', () => {
 		expect( markup.length ).toBeGreaterThan( 0 );
 	} );
 
+	it( 'renders bare line breaks as aligned rows', () => {
+		const markup = renderLatexToMarkup( 'a\\\\b' );
+
+		expect( markup ).toContain( 'ML__mtable' );
+		expect( markup ).not.toContain( 'ML__error' );
+	} );
+
+	it( 'renders bare \\cr as aligned rows', () => {
+		const markup = renderLatexToMarkup( 'a\\cr b' );
+
+		expect( markup ).toContain( 'ML__mtable' );
+		expect( markup ).not.toContain( 'ML__error' );
+	} );
+
+	it( 'renders math inside colorbox as math markup', () => {
+		const markup = renderLatexToMarkup( '\\colorbox{aqua}{F=m \\cdot a}' );
+
+		expect( markup ).toContain( 'background-color:aqua' );
+		expect( markup ).toContain( 'ML__mathit' );
+		expect( markup ).not.toContain( 'F=m \\cdot a' );
+	} );
+
 	it( 'converts [% %] shortcodes in a text node', () => {
 		const host = document.createElement( 'div' );
 		host.innerHTML = '<p>Area is [%16\\Large\\frac{1}{3}%] units</p>';

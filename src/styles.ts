@@ -3,3 +3,4 @@
 //   import 'ilatex-editor/styles';
 import 'mathlive/static.css';
 import 'mathlive/fonts.css';
+import './mathlive-overrides.css';
